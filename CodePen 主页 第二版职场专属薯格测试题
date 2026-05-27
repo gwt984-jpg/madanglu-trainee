@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>马当路练习生 | AI职场薯格测评</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #FF4D6D;
+    --red-light: #FF7F96;
+    --red-pale: #FFF0F3;
+    --red-mid: #FFD6DD;
+    --dark: #1A1A2E;
+    --gray: #6B7280;
+    --white: #FFFFFF;
+    --cream: #FFFAF8;
+    --shadow: 0 8px 32px rgba(255,77,109,0.15);
+    --shadow-lg: 0 20px 60px rgba(255,77,109,0.2);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- BG DECORATIONS ---- */
+  body::before {
+    content: '';
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background:
+      radial-gradient(ellipse 60% 40% at 10% 10%, rgba(255,77,109,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 90% 80%, rgba(255,77,109,0.06) 0%, transparent 60%);
+    pointer-events: none; z-index:0;
+  }
+
+  .container { position:relative; z-index:1; max-width:780px; margin:0 auto; padding:0 20px; }
+
+  /* ---- HEADER ---- */
+  .header { text-align:center; padding: 56px 20px 40px; }
+  .header .badge {
+    display:inline-block; background: linear-gradient(135deg, var(--red), #FF8FA3);
+    color: white; font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    padding: 5px 16px; border-radius: 20px; margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: clamp(28px, 6vw, 42px); font-weight: 900; line-height: 1.25; margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--red) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header p { color: var(--gray); font-size: 14px; line-height: 1.7; max-width: 520px; margin: 0 auto; }
+
+  /* ---- SCREENS ---- */
+  .screen { display:none; }
+  .screen.active { display:block; animation: fadeIn 0.4s ease both;}
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ---- MODE SELECT ---- */
+  .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 32px 0; }
+  @media(max-width:560px){ .mode-cards { grid-template-columns:1fr; } }
+  .mode-card {
+    background: white; border: 2.5px solid var(--red-mid); border-radius: 24px;
+    padding: 32px 24px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); position: relative;
+  }
+  .mode-card:hover { border-color: var(--red); transform: translateY(-4px); box-shadow: var(--shadow-lg); background: var(--red-pale); }
+  .mode-card .icon { font-size: 40px; margin-bottom: 16px; display:block; }
+  .mode-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .mode-card p { font-size: 13px; color: var(--gray); line-height: 1.6; }
+  .mode-card .tag {
+    display:inline-block; margin-top: 14px; background: var(--red-pale); color: var(--red);
+    font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 10px;
+  }
+  .mode-card.recommended { border-color: var(--red); }
+  .mode-card.recommended .badge-rec {
+    position:absolute; top:16px; right:16px; background: var(--red);
+    color:white; font-size:10px; font-weight:700; padding: 3px 10px; border-radius: 8px;
+  }
+
+  /* ---- QUIZ ---- */
+  .quiz-wrap { background: white; border-radius: 28px; padding: 40px 36px; box-shadow: var(--shadow); margin: 24px 0; }
+  @media(max-width:480px){ .quiz-wrap { padding: 28px 20px; } }
+  .progress-bar-wrap { background: var(--red-mid); border-radius: 8px; height: 6px; margin-bottom: 32px; overflow:hidden; }
+  .progress-bar { height:100%; background: linear-gradient(90deg, var(--red), var(--red-light)); border-radius: 8px; transition: width 0.4s ease; }
+  .q-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; }
+  .q-num { font-size: 12px; color: var(--gray); font-weight: 500; }
+  .q-type { font-size: 11px; font-weight:700; color: var(--red); background: var(--red-pale); padding: 3px 10px; border-radius: 8px; }
+  
+  .question-text { font-size: clamp(16px, 3.5vw, 20px); font-weight: 700; line-height: 1.5; margin-bottom: 28px; }
+  .options { display:flex; flex-direction:column; gap:12px; }
+  .option-btn {
+    background: var(--cream); border: 2px solid transparent; border-radius: 16px; padding: 16px 20px;
+    text-align: left; cursor: pointer; transition: all 0.25s ease; font-size: 14px; color: var(--dark);
+    line-height: 1.5; display:flex; align-items:center; gap:14px;
+  }
+  .option-btn .opt-letter {
+    width:32px; height:32px; border-radius:50%; background: var(--red-mid); color: var(--red);
+    font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: 0.25s;
+  }
+  .option-btn:hover, .option-btn.selected { border-color: var(--red); background: var(--red-pale); }
+  .option-btn:hover .opt-letter, .option-btn.selected .opt-letter { background: var(--red); color: white; }
+
+  .quiz-nav { display:flex; justify-content:space-between; align-items:center; margin-top: 32px; }
+  .btn-back { background: none; border: 2px solid var(--red-mid); border-radius: 14px; padding: 12px 24px; font-size: 14px; color: var(--gray); cursor: pointer; }
+  .btn-next {
+    background: linear-gradient(135deg, var(--red), #FF7F96); border:none; border-radius:14px; padding: 12px 32px;
+    font-size: 14px; font-weight:700; color: white; cursor: pointer; box-shadow: 0 4px 16px rgba(255,77,109,0.35);
+  }
+  .btn-next:disabled { opacity:0.4; cursor:not-allowed; box-shadow:none; }
+
+  /* ---- LOADING ---- */
+  .loading-wrap { text-align:center; padding: 80px 20px; }
+  .loading-ring { width: 72px; height: 72px; border: 5px solid var(--red-mid); border-top-color: var(--red); border-radius: 50%; margin: 0 auto 24px; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 16px; color: var(--gray); }
+
+  /* ---- RESULT ---- */
+  .result-poster { background: linear-gradient(135deg, #1A1A2E 0%, #2D1B33 50%, #1A1A2E 100%); border-radius: 28px; padding: 40px 32px; text-align: center; margin-bottom: 24px; overflow:hidden; position:relative; }
+  .result-poster::before { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background: radial-gradient(ellipse at center, rgba(255,77,109,0.15) 0%, transparent 60%); animation: pulse 3s ease infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+
+  .persona-icon { font-size:72px; margin-bottom:16px; position:relative; display:block; }
+  .persona-name { font-size: clamp(22px, 5vw, 30px); font-weight: 900; color: white; margin-bottom: 8px; position:relative; }
+  .persona-tag { display:inline-block; background: var(--red); color: white; font-size: 12px; font-weight:700; padding: 6px 16px; border-radius: 14px; margin-bottom: 20px; position:relative; }
+  .persona-desc { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.7; max-width: 480px; margin: 0 auto 24px; position:relative; }
+  
+  .score-row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; position:relative; }
+  .score-chip { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 10px 18px; text-align:center; }
+  .score-chip .s-val { font-size: 22px; font-weight:900; color: var(--red-light); }
+  .score-chip .s-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-top:2px; }
+
+  .result-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media(max-width:480px){ .result-cards { grid-template-columns:1fr; } }
+  .result-card { background:white; border-radius:20px; padding:24px 20px; border: 1.5px solid var(--red-mid); }
+  .result-card h4 { font-size: 14px; font-weight:700; color: var(--red); margin-bottom:12px; }
+  .result-card ul li { font-size: 13px; color: var(--gray); line-height:1.6; padding: 6px 0; border-bottom: 1px dashed var(--red-mid); }
+  .result-card ul li:last-child { border:none; }
+
+  /* ---- AUTH MODAL ---- */
+  .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(26,26,46,0.6); backdrop-filter: blur(4px); z-index: 100; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.show { display:flex; }
+  .modal-box { background:white; border-radius:28px; padding:35px 30px; max-width: 420px; width:100%; text-align:center; animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes modalIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
+  .modal-box h3 { font-size:20px; font-weight:900; margin-bottom:10px; }
+  .modal-perks { background: var(--red-pale); border-radius: 14px; padding: 16px; margin: 20px 0; text-align:left; font-size: 13px; line-height:1.8; color: var(--dark); }
+  .btn-auth { width: 100%; background: linear-gradient(135deg, var(--red), #FF7F96); border:none; border-radius:16px; padding:14px; font-size:15px; font-weight:700; color:white; cursor:pointer; margin-bottom:10px;}
+  .btn-skip { width: 100%; background:none; border:2px solid var(--red-mid); border-radius:16px; padding:12px; font-size:14px; color:var(--gray); cursor:pointer; }
+
+  /* ---- SUCCESS / SHARED SCREENS ---- */
+  .success-wrap { text-align:center; padding:60px 20px; }
+  .success-icon { font-size: 72px; margin-bottom:20px; }
+  .success-wrap h2 { font-size:24px; font-weight:900; margin-bottom:12px; }
+  .success-wrap p { font-size:14px; color:var(--gray); line-height:1.7; margin-bottom:32px; }
+  .share-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .btn-share { border:none; border-radius:14px; padding:12px 28px; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; }
+  .btn-share.red { background:var(--red); color:white; box-shadow: 0 4px 14px rgba(255,77,109,0.3); }
+  .btn-share.outline { background:white; border:2px solid var(--red-mid); color:var(--gray); }
+  .btn-share:hover { transform:translateY(-2px); }
+
+  /* ---- DEEP EXTRAS ---- */
+  .deep-section { background:white; border-radius:20px; padding:28px 24px; border:1.5px solid var(--red-mid); margin-bottom:16px; }
+  .deep-section h4 { font-size:15px; font-weight:800; color:var(--dark); margin-bottom:16px; }
+  .bar-item { margin-bottom:14px; }
+  .bar-label { display:flex; justify-content:space-between; font-size:13px; color:var(--gray); margin-bottom:6px; }
+  .bar-track { background: var(--red-mid); border-radius:6px; height:8px; overflow:hidden; }
+  .bar-fill { height:100%; background:linear-gradient(90deg, var(--red), var(--red-light)); width:0%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+  .advice-chip { background: var(--red-pale); border-radius:14px; padding:14px; font-size:13px; color:var(--dark); line-height:1.6; margin-bottom:12px;}
+  .advice-chip strong { color:var(--red); display:block; margin-bottom:4px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header" id="header-box">
+    <span class="badge">🌟 小红书 × 马当路练习生</span>
+    <h1>测你的职场专属薯格✨</h1>
+    <p>MBTI过时了！玩梗测出你的小红书专属打工人设，一键投递锁定校招优先面试权！</p>
+  </div>
+
+  <div id="screen-mode" class="screen active">
+    <div class="mode-cards">
+      <div class="mode-card" onclick="startQuiz('light')">
+        <span class="icon">🍟</span>
+        <h3>玩梗轻量版</h3>
+        <p>无压力！生成专属薯格人设海报，适合朋友圈/小红书晒图发疯</p>
+        <span class="tag">8道题 · 纯娱乐</span>
+      </div>
+      <div class="mode-card recommended" onclick="startQuiz('deep')">
+        <div class="badge-rec">校招推荐</div>
+        <span class="icon">💡</span>
+        <h3>职场深度版</h3>
+        <p>趣味+专业结合！解锁能力雷达，匹配四大岗位及AI备考指南</p>
+        <span class="tag">16道题 · 精准匹配</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-quiz" class="screen">
+    <div class="quiz-wrap">
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+      <div class="q-meta">
+        <span class="q-num" id="q-num">第 1 题</span>
+        <span class="q-type" id="q-type">职场反应</span>
+      </div>
+      <div class="question-text" id="question-text"></div>
+      <div class="options" id="options-wrap"></div>
+      <div class="quiz-nav">
+        <button class="btn-back" onclick="prevQ()">← 上一题</button>
+        <button class="btn-next" id="btn-next" onclick="nextQ()" disabled>下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-loading" class="screen">
+    <div class="loading-wrap">
+      <div class="loading-ring"></div>
+      <div class="loading-text" id="loading-text">AI系统正在疯狂计算中…</div>
+      <div style="font-size:13px; color:var(--red-light); margin-top:10px;">正在提取你的专属薯格DNA</div>
+    </div>
+  </div>
+
+  <div id="screen-result" class="screen">
+    <div style="text-align:center; font-weight:800; font-size:20px; margin-bottom:16px;">你的专属小红书人设出炉！</div>
+    <div class="result-poster">
+      <span class="persona-icon" id="result-icon"></span>
+      <div class="persona-name" id="result-name"></div>
+      <div class="persona-tag" id="result-tag"></div>
+      <div class="persona-desc" id="result-desc"></div>
+      <div class="score-row" id="score-row"></div>
+    </div>
+    <div class="result-cards" id="result-cards"></div>
+    <div id="deep-extras"></div>
+  </div>
+
+  <div id="screen-success" class="screen">
+    <div class="success-wrap">
+      <div class="success-icon">🎉</div>
+      <h2>投递成功！已录入人才储备池</h2>
+      <p>你的专属薯格画像已成功同步至项目组后台。<br>HR将在 <strong style="color:var(--red)">3个工作日内</strong> 优先审阅你的简历信息并同步面试排期。</p>
+      <div class="share-row">
+        <button class="btn-share red" onclick="shareResult()">📤 分享测评结果</button>
+        <button class="btn-share outline" onclick="restart()">🔄 重新测评</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-shared" class="screen">
+    <div class="success-wrap">
+      <div class="success-icon">🌟</div>
+      <h2>薯格报告已生成！</h2>
+      <p>复制结果带话题 <strong style="color:var(--red)">#我的AI职场初体验</strong> 分享至小红书，<br>抓取野生HR围观，解锁神秘空宣福利包！</p>
+      <div class="share-row">
+        <button class="btn-share red" onclick="shareResult()">📤 分享到小红书</button>
+        <button class="btn-share outline" onclick="restart()">🔄 重新测评</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal-box">
+    <div style="font-size:40px; margin-bottom:10px;">🔐</div>
+    <h3>薯格报告已生成！</h3>
+    <p style="font-size:14px; color:var(--gray); margin-bottom:10px;">是否授权数据用于<span style="color:var(--red);font-weight:bold;">小红书校招人才库</span>？</p>
+    <div class="modal-perks">
+      🎁 <b>授权专属福利：</b><br>
+      • 一键投递简历，锁定人才储备池<br>
+      • HR直观看到你的AI能力闪光点图谱<br>
+      • 优先获得马当路练习生面试绿色通道
+    </div>
+    <button class="btn-auth" onclick="agreeAuth()">✅ 授权并一键投递</button>
+    <button class="btn-skip" onclick="refuseAuth()">仅查看我的人设，暂不授权</button>
+  </div>
+</div>
+
+<script>
+// ===== 题库设计 (选项严格对应: 0-校园薯, 1-内容薯, 2-媒体薯, 3-技术薯) =====
+const questionsData = [
+  { q:"周末老板突然在群里发了个大红包，你的第一反应是？", type:"摸鱼实测", opts:[
+    "狂抢不误，发个表情包感谢老板后继续潜水 (摸鱼拿捏)", 
+    "截图发小红书吐槽或者做个职场段子分享 (网感敏锐)", 
+    "警觉！肯定要加班，先观察群动向再领 (清醒通透)", 
+    "后悔没用AI写个Python脚本，实现自动抢红包 (极致理性)"
+  ]},
+  { q:"接到一个毫无头绪的全新项目，你通常会？", type:"抗压反应", opts:[
+    "拉上朋友同事开群头脑风暴，边聊边干", 
+    "全网搜刮爆款对标，靠灵感碰撞出奇迹", 
+    "先列出清晰的时间线和资源盘点，稳步推进", 
+    "扔给AI生成10套方案和步骤拆解，自己当监工"
+  ]},
+  { q:"团队合作中，你最受不了哪种情况？", type:"职场雷区", opts:[
+    "气氛沉闷，大家都不沟通，像是一潭死水", 
+    "脑洞和创意被死板的规矩强行限制，太无聊了", 
+    "流程混乱，甩锅扯皮，进度没人跟进", 
+    "效率极低，宁愿人工复制粘贴也不用工具做自动化"
+  ]},
+  { q:"如果你能拥有一项职场超能力，你希望是？", type:"天赋觉醒", opts:[
+    "顶级社牛：随时随地跟任何人打成一片", 
+    "爆款制造机：随便写点啥都能轻松获得万赞", 
+    "情绪稳定仪：泰山崩于前而面不改色的端水大师", 
+    "AI召唤术：用工具秒杀所有重复劳动，早早下班"
+  ]},
+  { q:"看到群里两位同事在激烈争论，你的内心OS是？", type:"吃瓜心态", opts:[
+    "“赶紧去私聊安抚一下，和气生财啊”", 
+    "“哇哦，这个抓马的冲突点可以写成剧本！”", 
+    "“他们争论的逻辑漏洞也太多了，抓不到重点…”", 
+    "“吵得好没效率，不如拉个Excel对比一下优劣”"
+  ]},
+  { q:"如果在马当路实习，你最期待的场景是？", type:"愿景描绘", opts:[
+    "和各路牛人打成一片，扩列无数优秀的小伙伴", 
+    "亲手打造出全网刷屏的创意策划，成就感拉满", 
+    "完美统筹千万级的S级项目，一切尽在掌握", 
+    "掌握最前沿的AI技术，做职场无情的赛博坦人"
+  ]},
+  { q:"工作到下午三点，突然感觉脑子转不动了，你会？", type:"回血方式", opts:[
+    "去茶水间找熟悉的同事聊天八卦，吸收社交能量", 
+    "疯狂刷热搜和小红书，看看大家都在玩什么梗", 
+    "泡杯美式，写一份详细的To-do list重新找回掌控感", 
+    "挂个自动化脚本让电脑跑着，自己光明正大闭目养神"
+  ]},
+  { q:"完成一个大项目后，你发朋友圈的配文最可能是？", type:"社交面具", opts:[
+    "“感谢我的神仙团队，爱你们！[搞怪合照]”", 
+    "“终于熬出来了！这创意我自己都佩服！[表情包]”", 
+    "“稳稳落地，下个项目继续。[克制且官方的配图]”", 
+    "“[数据截图] 跑通了闭环，一些微小的工作。”"
+  ]}
+];
+
+const deepExtra = [
+  { q:"朋友找你倾诉职场烦恼，你通常怎么回应？", type:"沟通模式", opts:["疯狂共情，跟着一起骂无良老板","给他讲个更搞笑的段子转移注意力","客观分析利弊，给出防背锅的保命建议","甩过去一个“如何向上管理”的AI逻辑导图"]},
+  { q:"你觉得“好内容”的终极衡量标准是？", type:"价值取向", opts:["能引发强烈共鸣，大家在评论区聊嗨了","有极高的话题度，美感和情绪价值拉满","不仅好看，而且ROI和转化率都符合预期指标","逻辑严密，提供了以往没人做过的硬核增量信息"]},
+  { q:"对于AI工具的认知，你更倾向于？", type:"AI认知", opts:["是个好搭子，可以帮我写交际文案","是个打字机，帮我扩写和润色创意稿","是个小助理，帮我整理会议纪要和排期表","是个副大脑，不仅帮我执行，还帮我写代码和分析数据"]},
+  { q:"要拍一张团队大合照，你通常在哪个位置？", type:"团队角色", opts:["毫无疑问的C位或者活跃气氛的显眼包","负责想各种奇怪/创意的拍照pose指导大家","站在旁边统筹，确保每个人都露脸了并且表情OK","拿着单反/手机负责拍照，并且包揽后期的P图工作"]},
+  { q:"面对临时且紧急的Deadline，你的处理方式？", type:"时间管理", opts:["摇人拉群，疯狂动用人脉找救兵","肾上腺素飙升，往往在最后一刻爆发出神仙灵感","迅速砍掉边缘需求，保住核心交付物","立刻使用AI一键生成初稿，在基础上做修改"]},
+  { q:"如果要你负责一个小红书官方账号，你会？", type:"运营偏好", opts:["每天在评论区高强度冲浪翻牌子，跟粉丝做朋友","死磕每一篇封面的审美和标题的网感","做好排期表，确保每天稳定输出高质量图文","写个爬虫，分析竞品数据后再决定发什么"]},
+  { q:"收到负面反馈或者批评时，你第一反应是？", type:"逆商测试", opts:["先找朋友倾诉消化一下委屈的情绪","内心：“你懂什么艺术”，表面：“好的收到”","迅速复盘自己流程上的问题，绝不犯第二次","无感情剥离法，只提取有用的建议，忽略情绪化表达"]},
+  { q:"对于未来的职业规划，你更向往？", type:"成长路径", opts:["成为拥有强大人脉网的超级连接者","深耕内容，成为一呼百应的头部创作者","往管理方向走，带大团队操盘大盘子","走专家路线，做无可替代的六边形技术/策略大牛"]}
+];
+
+// ===== 四大薯格人格数据 =====
+const personas = [
+  { icon:"😎", name:"校园薯｜拿捏者", tag:"MBTI型：ENFJ (社牛共情型)", desc:"社交恐怖分子，共情力Max！懂学生痛点、会传播、懂种草，最适合校园圈层打通与品牌发声。", scores:[{v:"社牛指数",n:98},{v:"共情能力",n:92},{v:"网感敏锐",n:85},{v:"AI应用力",n:78}], strengths:["社交破冰","圈层打通","情绪共鸣","资源联动"], tracks:["校园传播岗","品牌营销"], aiTools:["AI社交沟通辅助","社群自动化管理","舆情热点追踪"], advice:"你的社交能量是最大天赋！在马当路实习中，尝试利用AI放大你的触达规模，做最高效的连接者。" },
+  { icon:"🎨", name:"内容薯｜浪漫行者", tag:"MBTI型：ENFP (浪漫创造型)", desc:"脑洞大、网感敏锐、擅长捕捉热点。拒绝死板套路，天生适配内容生态运营，在马当路你就是爆款制造机！", scores:[{v:"创意脑洞",n:98},{v:"网感敏锐",n:95},{v:"审美能力",n:88},{v:"AI应用力",n:80}], strengths:["爆款策划","情绪洞察","创意输出","视觉审美"], tracks:["社区运营岗","内容创作"], aiTools:["Midjourney视觉生成","Claude爆款脚本","小红书爆款提取器"], advice:"灵感虽然重要，但如果结合AI的数据挖掘，你的每一个好点子都能精准踩中流量密码！" },
+  { icon:"🎭", name:"媒体薯｜伪人(良性)", tag:"MBTI型：INTJ (清醒统筹型)", desc:"外表得体专业、内心清醒通透！擅长资源对接、统筹联动，情绪极其稳定，靠谱且高效的端水大师。", scores:[{v:"执行落地",n:99},{v:"情绪稳定",n:95},{v:"大局观念",n:88},{v:"AI应用力",n:84}], strengths:["资源统筹","危机处理","跨界沟通","项目落地"], tracks:["媒体合作岗","公关运营"], aiTools:["Notion项目自动化","AI排期甘特图","智能化会议纪要"], advice:"统筹大师的极致是自动化！把繁琐的对接流程交给AI工具，将精力留在最高价值的战略规划上。" },
+  { icon:"🤖", name:"技术薯｜思考者", tag:"MBTI型：INTP (极致理性型)", desc:"逻辑缜密、热衷AI工具应用、理性务实。能用代码/工具解决的绝不用嘴，绝对的技术品牌赋能者！", scores:[{v:"AI熟练度",n:99},{v:"逻辑分析",n:95},{v:"抗压能力",n:88},{v:"协调转化",n:70}], strengths:["逻辑分析","前沿AI实战","流程优化","理性决策"], tracks:["技术品牌岗","算法策略岗"], aiTools:["Python自动化脚本","Copilot开发助手","数据可视化洞察"], advice:"你已经是前沿工具的掌控者，如果在沟通中多一点“人味儿”，你将成为无懈可击的职场六边形战士！" }
+];
+
+// ===== 状态管理 =====
+let currentQuestions = [];
+let currentIndex = 0;
+let answers = []; 
+let currentMode = '';
+let autoNextTimer = null; 
+let currentPersona = null; // 确保唯一的变量名
+
+// ===== 流程逻辑 =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if(id === 'mode') {
+    document.getElementById('header-box').style.display = 'block';
+  } else {
+    document.getElementById('header-box').style.display = 'none';
+  }
+}
+
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function startQuiz(mode) {
+  currentMode = mode;
+  currentQuestions = mode === 'light' ? questionsData : [...questionsData, ...deepExtra];
+  currentIndex = 0;
+  answers = new Array(currentQuestions.length).fill(-1);
+  renderQ();
+  showScreen('quiz');
+}
+
+function renderQ() {
+  const q = currentQuestions[currentIndex];
+  document.getElementById('progress-bar').style.width = ((currentIndex / currentQuestions.length) * 100) + '%';
+  document.getElementById('q-num').textContent = `第 ${currentIndex+1}/${currentQuestions.length} 题`;
+  document.getElementById('q-type').textContent = q.type;
+  document.getElementById('question-text').textContent = q.q;
+
+  const wrap = document.getElementById('options-wrap');
+  wrap.innerHTML = q.opts.map((o,i) => `
+    <button class="option-btn ${answers[currentIndex]===i?'selected':''}" onclick="selectOpt(${i})">
+      <span class="opt-letter">${['A','B','C','D'][i]}</span>
+      <span>${o}</span>
+    </button>
+  `).join('');
+
+  document.querySelector('.btn-back').style.visibility = currentIndex === 0 ? 'hidden' : 'visible';
+  document.getElementById('btn-next').disabled = answers[currentIndex] === -1;
+  document.getElementById('btn-next').textContent = currentIndex === currentQuestions.length - 1 ? '一键生成报告 ✨' : '下一题 →';
+}
+
+function selectOpt(i) {
+  if (autoNextTimer) clearTimeout(autoNextTimer);
+  
+  answers[currentIndex] = i;
+  
+  document.querySelectorAll('.option-btn').forEach((btn, idx) => {
+    btn.classList.toggle('selected', idx === i);
+  });
+  document.getElementById('btn-next').disabled = false;
+
+  autoNextTimer = setTimeout(nextQ, 300);
+}
+
+function nextQ() {
+  if (autoNextTimer) clearTimeout(autoNextTimer);
+  if (answers[currentIndex] === -1) return;
+  
+  if (currentIndex < currentQuestions.length - 1) { 
+    currentIndex++; 
+    renderQ(); 
+  } else { 
+    calcResult(); 
+  }
+}
+
+function prevQ() { 
+  if (autoNextTimer) clearTimeout(autoNextTimer);
+  if (currentIndex > 0) { 
+    currentIndex--; 
+    renderQ(); 
+  } 
+}
+
+function calcResult() {
+  showScreen('loading');
+  
+  const scores = [0, 0, 0, 0];
+  answers.forEach(val => { if(val !== -1) scores[val]++; });
+  
+  let maxScore = Math.max(...scores);
+  let winIndex = scores.indexOf(maxScore);
+  
+  currentPersona = personas[winIndex];
+
+  setTimeout(() => { 
+    renderResult(currentPersona); 
+  }, 2000);
+}
+
+function renderResult(p) {
+  document.getElementById('result-icon').textContent = p.icon;
+  document.getElementById('result-name').textContent = p.name;
+  document.getElementById('result-tag').textContent = p.tag;
+  document.getElementById('result-desc').textContent = p.desc;
+
+  document.getElementById('score-row').innerHTML = p.scores.map(s =>
+    `<div class="score-chip"><div class="s-val">${s.n}</div><div class="s-label">${s.v}</div></div>`
+  ).join('');
+
+  document.getElementById('result-cards').innerHTML = `
+    <div class="result-card"><h4>💪 核心优势</h4><ul>${p.strengths.map(s=>`<li>✧ ${s}</li>`).join('')}</ul></div>
+    <div class="result-card"><h4>🎯 马当路推荐岗位</h4><ul>${p.tracks.map(t=>`<li>✧ ${t}</li>`).join('')}</ul></div>
+  `;
+
+  if (currentMode === 'deep') {
+    document.getElementById('deep-extras').innerHTML = `
+      <div class="deep-section">
+        <h4>📈 能力雷达详解</h4>
+        ${p.scores.map(s => `
+          <div class="bar-item">
+            <div class="bar-label"><span>${s.v}</span><span>${s.n}/100</span></div>
+            <div class="bar-track"><div class="bar-fill" data-width="${s.n}%"></div></div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="deep-section">
+        <h4>🤖 AI工具箱清单</h4>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="advice-chip" style="margin-bottom:0;"><strong>主攻利器</strong>${p.aiTools[0]}</div>
+          <div class="advice-chip" style="margin-bottom:0;"><strong>协同提效</strong>${p.aiTools[1]}</div>
+        </div>
+      </div>
+      <div class="deep-section">
+        <h4>💡 校招成长与备考建议</h4>
+        <div class="advice-chip" style="background:#fff; border:1px dashed var(--red-mid); margin-bottom:0;">${p.advice}</div>
+      </div>
+    `;
+    
+    setTimeout(() => {
+      document.querySelectorAll('.bar-fill').forEach(bar => {
+        bar.style.width = bar.getAttribute('data-width');
+      });
+    }, 150);
+
+  } else {
+    document.getElementById('deep-extras').innerHTML = `
+      <div class="deep-section" style="text-align:center; padding:24px;">
+        <h4 style="margin-bottom:8px;">🚀 解锁详细的【岗位备考建议+能力雷达】？</h4>
+        <p style="font-size:12px; color:var(--gray); margin-bottom:14px;">深度测试将全方位解析你的AI工具匹配链条</p>
+        <button class="btn-next" style="margin:0 auto; display:block;" onclick="startQuiz('deep')">参加职场深度版测评</button>
+      </div>
+    `;
+  }
+  
+  showScreen('result');
+  setTimeout(() => showModal('auth-modal'), 1200);
+}
+
+// ===== 修正后的弹窗跳转及重测交互 =====
+function agreeAuth() {
+  hideModal('auth-modal');
+  showScreen('success');
+}
+
+function refuseAuth() {
+  hideModal('auth-modal');
+  showScreen('shared');
+}
+
+function shareResult() {
+  // 修正变量名为全局可控的 currentPersona
+  if (navigator.share && currentPersona) {
+    navigator.share({
+      title: `我是小红书「${currentPersona.name}」| 马当路练习生测评`,
+      text: `${currentPersona.desc}\n快来解锁你的专属职场薯格！#我的AI职场初体验`,
+      url: window.location.href
+    }).catch(() => {
+      alert('📋 链接已复制！快去小红书带话题 #我的AI职场初体验 晒出你的薯格吧！');
+    });
+  } else {
+    alert('📋 截图保存海报成功！\n快去小红书带话题 #我的AI职场初体验 分享你的专属人设吧！');
+  }
+}
+
+function restart() {
+  currentIndex = 0;
+  answers = [];
+  currentPersona = null;
+  if (autoNextTimer) clearTimeout(autoNextTimer);
+  showScreen('mode');
+}
+</script>
+</body>
+</html>
